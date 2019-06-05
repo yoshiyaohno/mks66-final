@@ -73,9 +73,8 @@ getRGB c = map fromIntegral [getR c, getG c, getB c]
 -- takes a screen and puts in ppm format
 printPixels :: Screen -> BS.ByteString
 printPixels scrn =
-    ppmHeader (w1-w0, h1-h0)
-    `BS.append` (BS.pack $ getRGB =<<
-        [scrn!(x, y) | x <- [w0..w1-1], y <- reverse [h0..h1-1]])
+    ppmHeader (w1-w0, h1-h0) `BS.append` (BS.pack $ getRGB =<<
+        [scrn!(x, y) | y <- reverse [h0..h1-1], x <- [w0..w1-1]])
             where ((w0,h0), (w1,h1)) = bounds scrn
        
 -- why
