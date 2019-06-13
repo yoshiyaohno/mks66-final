@@ -35,9 +35,26 @@ vertNorms = M.map avgNorms . M.fromListWith (++) . concatMap _tNorms
 
 sphereNormals :: Double -> Double -> Double -> Double
     -> (VertNorms, [Triangle Double])
-sphereNormals cx cy cz r = (nrms, tris)
-    where tris = sphere cx cy cz r
-          nrms = vertNorms tris
+sphereNormals cx cy cz r = 
+    let tris = sphere cx cy cz r
+        nrms = vertNorms tris
+    in  (nrms, tris)
+
+vecterpolateY :: (Vect Double, Vect Double) -> (Vect Double, Vect Double)
+    -> [((Int, Int), Vect Double)]
+vecterpolateY (v0, n0@(Vect _ ny0 _ _)) (v1, n1@(Vect _ ny1 _ _)) =
+    [((round x, round y), nlorpy y) | (Vect x y _ _) <- lh getY v0 v1 ]
+        where nlorpy y = lerp n0 n1 $ (y - ny0) / (ny1 - ny0)
+
+vecterpolateX :: ((Int, Int), Vect Double) -> ((Int, Int), Vect Double)
+    -> [((Int, Int), Vect Double)]
+vecterpolateX ((x0,y0), n0@(Vect nx0 _ _ _)) ((x1,y1), n1@(Vect nx1 _ _ _))
+    | y0 /= y1  = error "mismatched y values in vecterpolateX"
+    | x0 == x1  = [((x0,y0),n0)]
+    | otherwise =
+        let nlorpx x = lerp n0 n1 $ x / (nx1 - nx0)
+        in  [((x+x0, y0), nlorpx . fromIntegral $ x)
+                | x <- [0, signum (x1-x0) .. (x1-x0)]]
 
 scanTriangle :: Triangle Double -> [Pixel]
 scanTriangle (Triangle (a, b, c)) = let

@@ -163,31 +163,33 @@ line _ (x0,y0,z0) _ (x1,y1,z1) _ = do
     modify . modScreen $ drawLine red (fmap round ln)
 
 box :: (MonadState DrawMats m) => MS -> Vec3 -> Vec3 -> MS -> m ()
-box mat (cx,cy,cz) (w,h,d) _ = do
-    dm <- get
-    let tris = S.box cx cy cz w h d
-        m = case mat of
-            Nothing -> defaultMat
-            Just s  -> findMaterial s dm
-    drawTriangles m $ trTris dm tris
+box = undefined
+-- box mat (cx,cy,cz) (w,h,d) _ = do
+--     dm <- get
+--     let tris = S.box cx cy cz w h d
+--         m = case mat of
+--             Nothing -> defaultMat
+--             Just s  -> findMaterial s dm
+--     drawTriangles m $ trTris dm tris
 
 sphere :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> MS -> m ()
 sphere mat (cx,cy,cz) r _ = do
     dm <- get
-    let tris = S.sphere cx cy cz r
+    let (vn,tris) = S.sphereNormals cx cy cz r
         m = case mat of
             Nothing -> defaultMat
             Just s  -> findMaterial s dm
-    drawTriangles m $ trTris dm tris
+    drawTriangles m vn $ trTris dm tris
 
 torus :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> Db -> MS -> m ()
-torus mat (cx,cy,cz) r0 r1 _ = do
-    dm <- get
-    let tris = S.torus cx cy cz r0 r1
-        m = case mat of
-            Nothing -> defaultMat
-            Just s  -> findMaterial s dm
-    drawTriangles m $ trTris dm tris
+torus = undefined
+-- torus mat (cx,cy,cz) r0 r1 _ = do
+--     dm <- get
+--     let tris = S.torus cx cy cz r0 r1
+--         m = case mat of
+--             Nothing -> defaultMat
+--             Just s  -> findMaterial s dm
+--     drawTriangles m $ trTris dm tris
 
 push :: (MonadState DrawMats m) => m ()
 push = modify pushTransform
