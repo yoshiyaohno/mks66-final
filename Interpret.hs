@@ -179,7 +179,7 @@ sphere mat (cx,cy,cz) r _ = do
             Nothing -> defaultMat
             Just s  -> findMaterial s dm
     drawTriangles m $ trTris dm tris
-    
+
 torus :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> Db -> MS -> m ()
 torus mat (cx,cy,cz) r0 r1 _ = do
     dm <- get

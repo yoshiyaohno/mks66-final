@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TupleSections #-}
 module Solids where
 
 import Line
@@ -6,29 +6,47 @@ import Screen
 import Transform
 
 import Data.Array.Unboxed
+import Control.Applicative
 import Control.Monad.State
 import qualified Data.List  as L
 import qualified Data.Set   as S
+import qualified Data.Map   as M
 
 import Control.Exception
+
+type VertNorms = M.Map (Vect Double) (Vect Double)
 
 newtype Triangle a = Triangle (Vect a, Vect a, Vect a) deriving (Show, Eq)
 newtype Pixel = Pixel {getTT :: ((Int, Int), Double)}
     deriving (Eq, Ord, Show)
 
 piStep :: Floating a => a
---piStep = pi/6
-piStep = pi/21
+piStep = pi/11
+--piStep = pi/21
 --piStep = pi/51
 
-scanTriangle :: Triangle Double -> S.Set Pixel
+avgNorms :: [Vect Double] -> Vect Double
+avgNorms vs = fmap (/(fromIntegral $ length vs)) $ foldr (liftA2 (+)) (pure 0) vs
+
+vertNorms :: [Triangle Double] -> VertNorms
+vertNorms = M.map avgNorms . M.fromListWith (++) . concatMap _tNorms
+    where _tNorms t@(Triangle (a,b,c)) =
+            let n = normal t in [(a,[n]), (b,[n]), (c,[n])]
+
+sphereNormals :: Double -> Double -> Double -> Double
+    -> (VertNorms, [Triangle Double])
+sphereNormals cx cy cz r = (nrms, tris)
+    where tris = sphere cx cy cz r
+          nrms = vertNorms tris
+
+scanTriangle :: Triangle Double -> [Pixel]
 scanTriangle (Triangle (a, b, c)) = let
     [bot, mid, top] = map vdToPix (L.sortOn getY [a, b, c])
     e1 = pixLiner bot top
     e2 = pixLiner mid top ++ tail (pixLiner bot mid)
     es = if 2*(pgetX mid) <= (pgetX top + pgetX bot)
             then zip e2 e1 else zip e1 e2
-    in S.fromList $ concatMap (uncurry pixScan) es
+    in concatMap (uncurry pixScan) es
 
 lh :: (Eq a, Enum a, Fractional a) =>
     (Vect a -> a) -> Vect a -> Vect a -> [Vect a]
@@ -76,6 +94,7 @@ normal (Triangle (a, b, c)) = crossProd ((-) <$> c <*> a) ((-) <$> b <*> a)
 trTriangle :: (Num a) => Transform a -> Triangle a -> Triangle a
 trTriangle t (Triangle (a, b, c)) = Triangle (pmult t a, pmult t b, pmult t c)
 
+
 sphere :: (Floating a, Enum a) => a -> a -> a -> a -> [Triangle a]
 sphere cx cy cz r = concat $ zipWith stitchLines (rotate 1 arcs) arcs
     where arcs = [[Vect (cx + r * cos thet) (cy + r * sin thet * cos phi)
@@ -93,7 +112,7 @@ torus cx cy cz r0 r1 = concat $ zipWith stitchLines arcs (rotate 1 arcs)
 box :: (Floating a, Enum a) => a -> a -> a -> a -> a -> a -> [Triangle a]
 box cx cy cz w h d = let
     [p000, p001, p010, p011, p100, p101, p110, p111] = 
-        [Vect (cx + qx * w) (cy - qy * h) (cz - qz * d) 1
+        [Vect (cx + qx * w) (cy + qy * h) (cz + qz * d) 1
             | qx <- [0,1], qy <- [0,1], qz <- [0,1]]
                 in stitch4 p000 p010 p110 p100
                    ++ stitch4 p100 p110 p111 p101
