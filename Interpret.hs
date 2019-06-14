@@ -163,14 +163,13 @@ line _ (x0,y0,z0) _ (x1,y1,z1) _ = do
     modify . modScreen $ drawLine red (fmap round ln)
 
 box :: (MonadState DrawMats m) => MS -> Vec3 -> Vec3 -> MS -> m ()
-box = undefined
--- box mat (cx,cy,cz) (w,h,d) _ = do
---     dm <- get
---     let tris = S.box cx cy cz w h d
---         m = case mat of
---             Nothing -> defaultMat
---             Just s  -> findMaterial s dm
---     drawTriangles m $ trTris dm tris
+box mat (cx,cy,cz) (w,h,d) _ = do
+    dm <- get
+    let (vn,tris) = S.boxNormals cx cy cz w h d
+        m = case mat of
+            Nothing -> defaultMat
+            Just s  -> findMaterial s dm
+    drawTriangles m (S.trVNs (getTransform dm) vn) (trTris dm tris)
 
 sphere :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> MS -> m ()
 sphere mat (cx,cy,cz) r _ = do
@@ -179,7 +178,7 @@ sphere mat (cx,cy,cz) r _ = do
         m = case mat of
             Nothing -> defaultMat
             Just s  -> findMaterial s dm
-    drawTriangles m vn $ trTris dm tris
+    drawTriangles m (S.trVNs (getTransform dm) vn) (trTris dm tris)
 
 torus :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> Db -> MS -> m ()
 torus = undefined

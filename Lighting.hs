@@ -11,13 +11,16 @@ import Control.Monad.State
 import qualified Data.Map   as M
 import qualified Data.List  as L
 
+import Debug.Trace --baha
+
 drawTriangles :: (MonadState DrawMats m) => Material -> VertNorms
     -> [Triangle Double] -> m ()
 drawTriangles mat vn trs = do
     dm <- get
-    let pxs = concatMap scanTriangle trs
+    let trs' = bfCull trs
+        pxs = concatMap scanTriangle trs'
         (toDraw, newZB) = runState (plotPxs pxs) (getZBuf dm)
-        c = colorTriangles mat vn trs
+        c = colorTriangles mat vn trs'
     put $ dm {getZBuf = newZB}
     modify.modScreen $ draw [((x, y), c M.! (x,y)) | Pixel ((x,y),_) <- toDraw]
 
@@ -51,8 +54,9 @@ colorTriangle :: Material -> VertNorms -> Triangle Double
 colorTriangle mat vn (Triangle (a, b, c)) = let
     [bot, mid, top] =
         L.sortOn (getY.fst) [(a,vn M.! a), (b,vn M.! b), (c,vn M.! c)]
-    e1 = vecterpolateY bot top
-    e2 = (vecterpolateY bot mid) ++ vecterpolateY mid top 
+    e1 = --trace (show [bot, mid, top]) $
+            vecterpolateY bot top
+    e2 = vecterpolateY mid top ++ (tail $ vecterpolateY bot mid)
     es = if 2*(getX.fst $ mid) <= ((getX.fst $ top) + (getX.fst $ bot))
             then zip e2 e1 else zip e1 e2
     -- we need to get the vertex normals before this step

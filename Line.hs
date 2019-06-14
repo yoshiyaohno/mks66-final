@@ -53,7 +53,7 @@ lerp v0 v1 = (((liftA2 (\a b t -> a*t + b*(1 - t))) v0 v1) <*>).pure
 
 crossProd :: (Num a) => Vect a -> Vect a -> Vect a
 crossProd (Vect x0 y0 z0 _) (Vect x1 y1 z1 _)
-    = (Vect (y0*z1 - z0*y1) (x0*z1 - x1*z0) (x0*y1 - y0*x1) 1)
+    = (Vect (y0*z1 - z0*y1) (x0*z1 - x1*z0) (x0*y1 - y0*x1) 0)
 
 drawLine :: Color -> Line Int -> Screen -> Screen
 drawLine c ln = draw [((getX px, getY px), c) | px <- rasterLine ln]

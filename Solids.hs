@@ -14,6 +14,8 @@ import qualified Data.Map   as M
 
 import Control.Exception
 
+import Debug.Trace --baha
+
 type VertNorms = M.Map (Vect Double) (Vect Double)
 
 newtype Triangle a = Triangle (Vect a, Vect a, Vect a) deriving (Show, Eq)
@@ -25,8 +27,12 @@ piStep = pi/11
 --piStep = pi/21
 --piStep = pi/51
 
+trVNs :: Transform Double -> VertNorms -> VertNorms
+trVNs t = M.mapKeys (pmult t) . M.map (pmult t)
+
 avgNorms :: [Vect Double] -> Vect Double
-avgNorms vs = fmap (/(fromIntegral $ length vs)) $ foldr (liftA2 (+)) (pure 0) vs
+avgNorms vs = normalize . fmap (/(fromIntegral $ length vs)) $
+    foldr (liftA2 (+)) (pure 0) vs
 
 vertNorms :: [Triangle Double] -> VertNorms
 vertNorms = M.map avgNorms . M.fromListWith (++) . concatMap _tNorms
@@ -40,19 +46,57 @@ sphereNormals cx cy cz r =
         nrms = vertNorms tris
     in  (nrms, tris)
 
+boxNormals :: Double -> Double -> Double -> Double -> Double -> Double
+    -> (VertNorms, [Triangle Double])
+boxNormals cx cy cz w h d =
+    let tris = box cx cy cz w h d
+        nrms = vertNorms tris
+    in  (nrms, tris)
+
+--  let [p000, p001, p010, p011, p100, p101, p110, p111] = 
+--          [Vect (cx + qx * w) (cy + qy * h) (cz + qz * d) 1
+--              | qx <- [0,1], qy <- [0,1], qz <- [0,1]]
+--  in  (M.map normalize . M.fromList $
+--      [(p000, Vect (-1) (-1) (-1) 0), (p001, Vect (-1) (-1) 1 0)
+--      ,(p010, Vect (-1) 1 (-1) 0), (p011, Vect (-1) 1 1 0)
+--      ,(p100, Vect 1 (-1) (-1) 0), (p101, Vect 1 (-1) 1 0)
+--      ,(p110, Vect 1 1 (-1) 0), (p111, Vect 1 1 1 0)]
+--      ,
+--      stitch4 p000 p010 p110 p100
+--      ++ stitch4 p100 p110 p111 p101
+--      ++ stitch4 p111 p011 p001 p101
+--      ++ stitch4 p110 p010 p011 p111
+--      ++ stitch4 p011 p010 p000 p001
+--      ++ stitch4 p000 p100 p101 p001)
+
+box :: (Floating a, Enum a) => a -> a -> a -> a -> a -> a -> [Triangle a]
+box cx cy cz w h d = let
+    [p000, p001, p010, p011, p100, p101, p110, p111] = 
+        [Vect (cx + qx * w) (cy + qy * h) (cz + qz * d) 1
+            | qx <- [0,1], qy <- [0,1], qz <- [0,1]]
+                in stitch4 p000 p010 p110 p100
+                   ++ stitch4 p100 p110 p111 p101
+                   ++ stitch4 p111 p011 p001 p101
+                   ++ stitch4 p110 p010 p011 p111
+                   ++ stitch4 p011 p010 p000 p001
+                   ++ stitch4 p000 p100 p101 p001
+    -- y a h o o
+
 vecterpolateY :: (Vect Double, Vect Double) -> (Vect Double, Vect Double)
     -> [((Int, Int), Vect Double)]
 vecterpolateY (v0, n0@(Vect _ ny0 _ _)) (v1, n1@(Vect _ ny1 _ _)) =
-    [((round x, round y), nlorpy y) | (Vect x y _ _) <- lh getY v0 v1 ]
-        where nlorpy y = lerp n0 n1 $ (y - ny0) / (ny1 - ny0)
+    [((round x, round y), nlorpy y) | (Vect x y _ _) <-
+            lh getY (fromIntegral.round<$>v0) (fromIntegral.round<$>v1) ]
+        where nlorpy y = lerp n0 n1 $ (y - getY v0) / (getY v1 - getY v0)
 
 vecterpolateX :: ((Int, Int), Vect Double) -> ((Int, Int), Vect Double)
     -> [((Int, Int), Vect Double)]
 vecterpolateX ((x0,y0), n0@(Vect nx0 _ _ _)) ((x1,y1), n1@(Vect nx1 _ _ _))
-    | y0 /= y1  = error "mismatched y values in vecterpolateX"
+    | y0 /= y1  = error $ "mismatched y values in vecterpolateX:\ny0: "
+                        <> show y0 <> "\ny1: " <> show y1
     | x0 == x1  = [((x0,y0),n0)]
-    | otherwise =
-        let nlorpx x = lerp n0 n1 $ x / (nx1 - nx0)
+    | otherwise = --trace ("y0: " <> show y0 <> "\ny1: " <> show y1 <> "\n") $
+        let nlorpx x = lerp n0 n1 $ x / fromIntegral (x1 - x0)
         in  [((x+x0, y0), nlorpx . fromIntegral $ x)
                 | x <- [0, signum (x1-x0) .. (x1-x0)]]
 
@@ -125,19 +169,6 @@ torus cx cy cz r0 r1 = concat $ zipWith stitchLines arcs (rotate 1 arcs)
                   (cz - sin phi * (r0 * cos thet + r1)) 1
                   | thet <- [0, 2*piStep .. 2*pi]]
                   | phi <- [0, piStep .. 2*pi]]
-
-box :: (Floating a, Enum a) => a -> a -> a -> a -> a -> a -> [Triangle a]
-box cx cy cz w h d = let
-    [p000, p001, p010, p011, p100, p101, p110, p111] = 
-        [Vect (cx + qx * w) (cy + qy * h) (cz + qz * d) 1
-            | qx <- [0,1], qy <- [0,1], qz <- [0,1]]
-                in stitch4 p000 p010 p110 p100
-                   ++ stitch4 p100 p110 p111 p101
-                   ++ stitch4 p111 p011 p001 p101
-                   ++ stitch4 p110 p010 p011 p111
-                   ++ stitch4 p011 p010 p000 p001
-                   ++ stitch4 p000 p100 p101 p001
-    -- y a h o o
 
 stitchLines :: [Vect a] -> [Vect a] -> [Triangle a]
 stitchLines [] _   = []
