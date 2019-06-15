@@ -181,14 +181,13 @@ sphere mat (cx,cy,cz) r _ = do
     drawTriangles m (S.trVNs (getTransform dm) vn) (trTris dm tris)
 
 torus :: (MonadState DrawMats m) => MS -> Vec3 -> Db -> Db -> MS -> m ()
-torus = undefined
--- torus mat (cx,cy,cz) r0 r1 _ = do
---     dm <- get
---     let tris = S.torus cx cy cz r0 r1
---         m = case mat of
---             Nothing -> defaultMat
---             Just s  -> findMaterial s dm
---     drawTriangles m $ trTris dm tris
+torus mat (cx,cy,cz) r0 r1 _ = do
+    dm <- get
+    let (vn,tris) = S.torusNormals cx cy cz r0 r1
+        m = case mat of
+            Nothing -> defaultMat
+            Just s  -> findMaterial s dm
+    drawTriangles m (S.trVNs (getTransform dm) vn) (trTris dm tris)
 
 push :: (MonadState DrawMats m) => m ()
 push = modify pushTransform

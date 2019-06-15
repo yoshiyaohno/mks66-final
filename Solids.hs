@@ -39,6 +39,13 @@ vertNorms = M.map avgNorms . M.fromListWith (++) . concatMap _tNorms
     where _tNorms t@(Triangle (a,b,c)) =
             let n = normal t in [(a,[n]), (b,[n]), (c,[n])]
 
+torusNormals :: Double -> Double -> Double -> Double -> Double
+    -> (VertNorms, [Triangle Double])
+torusNormals cx cy cz r0 r1 = 
+    let tris = torus cx cy cz r0 r1
+        nrms = vertNorms tris
+    in  (nrms, tris)
+
 sphereNormals :: Double -> Double -> Double -> Double
     -> (VertNorms, [Triangle Double])
 sphereNormals cx cy cz r = 
