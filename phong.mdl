@@ -1,5 +1,5 @@
 
-frames 180
+frames 90
 
 move 250 250 0
 rotate y 360 rot
@@ -11,5 +11,5 @@ pop
 
 sphere 0 0 0 100
 
-vary rot 0 180 0 1
+vary rot 0 90 0 1
 

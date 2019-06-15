@@ -54,7 +54,7 @@ saveFrame dm = do
     fr <- ask
     let path = "anim/" ++ baseName dm ++ (printf "_%04d.png" fr)
     liftIO $ do
-        BS.writeFile ".tempimg.ppm" (printPixels $ getScreen dm)
+        BS.writeFile ".tempimg.ppm" (printPixels . downsample $ getScreen dm)
         callProcess "convert" [".tempimg.ppm", path]
         putStr $ printf "rendered frame %4d\n" fr
         removeFile ".tempimg.ppm"

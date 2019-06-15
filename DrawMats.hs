@@ -43,9 +43,9 @@ data Material = Material
 
 emptyDM :: DrawMats
 emptyDM = DrawMats
-    { getScreen = emptyScreen blk (500, 500)
-    , getTStack = [ident]
-    , getZBuf   = emptyZB (500, 500)
+    { getScreen = emptyScreen blk (1000, 1000)
+    , getTStack = [scale 2 2 2]
+    , getZBuf   = emptyZB (1000, 1000)
     , getMats   = M.empty
     , getKnobs  = M.empty
     , numFrames = 0
