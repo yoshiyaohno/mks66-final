@@ -12,9 +12,9 @@ import qualified Data.List  as L
 import qualified Data.Set   as S
 import qualified Data.Map   as M
 
-import Control.Exception
+import Data.Semigroup as Sem
 
-import Debug.Trace --baha
+import Control.Exception
 
 type VertNorms = M.Map (Vect Double) (Vect Double)
 
